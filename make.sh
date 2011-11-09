@@ -32,6 +32,7 @@ fi
 set -x
 
 work=work
+mnt=$work/mnt
 ubuntu=$work/ubuntu.d
 out=out
 iso_out=$out/`basename $iso_in .iso`-unattended.iso
@@ -39,22 +40,22 @@ iso_out=$out/`basename $iso_in .iso`-unattended.iso
 # prepare work directory
 rm -r $work
 mkdir $work
-[ -d out ] || mkdir out
+[ -d $out ] || mkdir $out
+[ -d $mnt ] || mkdir $mnt
 
 # extract iso image into file system
-7z -o$ubuntu x $iso_in || exit -2
-rm -r $ubuntu/[BOOT]
-
+fuseiso $iso_in $mnt
+cp -a $mnt/ $ubuntu
+fusermount -u $mnt
+chmod -R u+w $ubuntu
 
 # boot without waiting for user input
 sed -i -r 's/timeout\s+[0-9]+/timeout 1/g' $ubuntu/isolinux/isolinux.cfg
 
+# Add boot entry for unattended install
 [ -f $ubuntu/isolinux/text.cfg ] && isolinux_cfg=$ubuntu/isolinux/text.cfg
 [ -f $ubuntu/isolinux/txt.cfg ] && isolinux_cfg=$ubuntu/isolinux/txt.cfg
-
 if [ -z $isolinux_cfg ]; then echo File not found: isolinux/text.cfg ; exit 3 ; fi
-
-# Add boot entry for unattended install
 cat -  > $isolinux_cfg.tmp << EOF
 default unattended
 label unattended
