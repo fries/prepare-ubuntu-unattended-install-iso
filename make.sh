@@ -49,16 +49,21 @@ rm -r $ubuntu/[BOOT]
 # boot without waiting for user input
 sed -i -r 's/timeout\s+[0-9]+/timeout 1/g' $ubuntu/isolinux/isolinux.cfg
 
+[ -f $ubuntu/isolinux/text.cfg ] && isolinux_cfg=$ubuntu/isolinux/text.cfg
+[ -f $ubuntu/isolinux/txt.cfg ] && isolinux_cfg=$ubuntu/isolinux/txt.cfg
+
+if [ -z $isolinux_cfg ]; then echo File not found: isolinux/text.cfg ; exit 3 ; fi
+
 # Add boot entry for unattended install
-cat -  > $ubuntu/isolinux/text.cfg.tmp << EOF
+cat -  > $isolinux_cfg.tmp << EOF
 default unattended
 label unattended
   menu label ^Unattended Install of a Minimal Ubuntu Server VM - ERASES HARD DISK -
   kernel /install/vmlinuz
   append  file=/cdrom/preseed/unattended.seed debian-installer/locale=en_US console-setup/layoutcode=us initrd=/install/initrd.gz quiet --
 EOF
-grep -v 'default install' $ubuntu/isolinux/text.cfg >> $ubuntu/isolinux/text.cfg.tmp
-mv $ubuntu/isolinux/text.cfg.tmp $ubuntu/isolinux/text.cfg
+grep -v 'default install' $isolinux_cfg >> $isolinux_cfg.tmp
+mv $isolinux_cfg.tmp $isolinux_cfg
 
 # Copy the preseed configuration into /preseed/unattended.seed
 cp preseed/unattended.seed $ubuntu/preseed/unattended.seed
